@@ -1,0 +1,61 @@
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  SSH_PRIVATE_KEY: ${SSH_PRIVATE_KEY}
+  SSH_PUBLIC_KEY: ${SSH_PUBLIC_KEY}
+  DOCKER_HOST: tcp://docker:2375
+
+stages:
+  - test
+  - push_to_github
+
+code_tests:
+  stage: test
+  image: golang:1.19
+  before_script:
+    - go mod download
+  script:
+    - go test -race ./...
+
+code_linter:
+  stage: test
+  image: golangci/golangci-lint:v1.50.1
+  before_script:
+    - go mod download
+  script:
+    - golangci-lint run ./...
+
+
+push_to_github:
+  stage: push_to_github
+  image: ubuntu:latest
+  before_script:
+    - apt-get update
+    - apt-get install -y git openssh-client rsync
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - echo "$SSH_PUBLIC_KEY" > ~/.ssh/id_rsa.pub
+    - chmod 600 ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa.pub
+    - ssh-keyscan github.com >> ~/.ssh/known_hosts
+  script:
+    - cd $CI_PROJECT_DIR
+    - if [ -d "../tmp" ]; then
+        cd ../tmp;
+      else
+        mkdir ../tmp;
+        cd ../tmp;
+      fi
+    - rm -rf ./sss-erp-files-be  
+    - git clone git@github.com:oykos-development-hub/sss-erp-files-be.git
+    - cd sss-erp-files-be
+    - git checkout development
+    - rsync -a --exclude='.git' "$CI_PROJECT_DIR/" ./
+    - git add .
+    - git config --global user.email "hub@oykos.me"
+    - git config --global user.name "oykos-development-hub"
+    - git commit -m "Update code from GitLab"
+    - git push origin development

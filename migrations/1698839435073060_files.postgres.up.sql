@@ -1,6 +1,10 @@
 CREATE TABLE IF NOT EXISTS files (
     id serial PRIMARY KEY,
-    title VARCHAR ( 255 ) NOT NULL,
+    parent_id INTEGER REFERENCES files(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    type TEXT NOT NULL,
     created_at TIMESTAMP,
     updated_at TIMESTAMP
 );

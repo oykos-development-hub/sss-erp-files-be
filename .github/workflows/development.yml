@@ -1,0 +1,73 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Deploy to development server
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [development]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+     - uses: appleboy/ssh-action@master
+       with:
+            host: ${{vars.SSH_HOST}}
+            username: ${{vars.SSH_USER}}
+            password: ${{secrets.SSH_PASSPHRASE}}
+            script: |
+              # Check if Docker is already installed
+              if ! [ -x "$(command -v docker)" ]; then
+                  # Install Docker
+                  curl -fsSL https://get.docker.com -o get-docker.sh
+                  sudo sh get-docker.sh
+                  sudo usermod -aG docker $USER
+              else
+                  echo "Docker is already installed."
+              fi
+              # Check if Docker Compose is already installed
+              if ! [ -x "$(command -v docker-compose)" ]; then
+                  # Install Docker Compose
+                  sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                  sudo chmod +x /usr/local/bin/docker-compose
+              else
+                  echo "Docker Compose is already installed."
+              fi
+              # Display Docker Compose version
+              docker-compose --version
+              
+              cd /var/www/vhosts/oykos.me/${{vars.GIT_REPO}}.oykos.me
+              [ -d "./github" ] && echo "Existing github directory" || mkdir github
+              cd github
+              rm -rf ./${{vars.GIT_REPO}}
+              git clone -b development https://oykos-development-hub:${{secrets.GIT_ACCESS_TOKEN}}@github.com/oykos-development-hub/${{vars.GIT_REPO}}.git
+              cd ./${{vars.GIT_REPO}}
+              docker-compose down
+              docker-compose up -d
+              if ! command -v go &> /dev/null; then
+                echo "Go version is 1.20 or higher!"
+              elif [[ "$(go version)" != *"go1.20"* ]]; then
+                sudo rm -rf /usr/bin/go
+                echo "Go version is below 1.20. Installing Go 1.20..."
+                wget https://dl.google.com/go/go1.20.linux-amd64.tar.gz
+                sudo tar -C /usr/bin -xzf go1.20.linux-amd64.tar.gz
+                echo 'export PATH=$PATH:/usr/bin/go/bin' >> ~/.bashrc
+                source ~/.bashrc
+                rm go1.20.linux-amd64.tar.gz
+              fi
+              export PATH="/usr/bin/go/bin:$PATH"
+              go mod tidy
+              go build -o filesApp
+              if [ ! -f ./filesApp ]; then
+                echo "Go build "filesApp" file does not exist!"
+                exit 1
+              fi
+              rm -rf ../../filesApp
+              cp ./filesApp ../../
+              cp ./.env-example ../../.env
+              cp ./.env-example .env
+              ./cli migrate || true
+              sudo systemctl restart sss-erp-files-be.service

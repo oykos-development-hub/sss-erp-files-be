@@ -13,7 +13,7 @@ type File struct {
 	Name        string    `db:"name"`
 	Description *string   `db:"description"`
 	Size        int64     `db:"size"`
-	Type        string    `db:"type"`
+	Type        *string   `db:"type"`
 	CreatedAt   time.Time `db:"created_at,omitempty"`
 	UpdatedAt   time.Time `db:"updated_at"`
 }

@@ -11,7 +11,7 @@ type FileDTO struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
 	Size        int64   `json:"size"`
-	Type        string  `json:"type"`
+	Type        *string `json:"type"`
 }
 
 type FileResponseDTO struct {
@@ -20,7 +20,7 @@ type FileResponseDTO struct {
 	Name        string    `json:"name"`
 	Description *string   `json:"description"`
 	Size        int64     `json:"size"`
-	Type        string    `json:"type"`
+	Type        *string   `json:"type"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }

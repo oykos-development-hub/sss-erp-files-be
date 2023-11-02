@@ -75,7 +75,7 @@ func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, _, err := r.FormFile("file")
+	file, header, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "Error during fetching file!", http.StatusBadRequest)
 		return
@@ -84,7 +84,7 @@ func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {
 
 	uploadDir := "./files"
 
-	fileName := generateUniqueFileName(filepath.Join(uploadDir, "file"))
+	fileName := generateUniqueFileName(header.Filename)
 
 	uploadedFile, err := os.Create(filepath.Join(uploadDir, fileName))
 	if err != nil {

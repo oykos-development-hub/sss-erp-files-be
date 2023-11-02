@@ -12,7 +12,7 @@ type File struct {
 	ParentID    *int      `db:"parent_id"`
 	Name        string    `db:"name"`
 	Description *string   `db:"description"`
-	Size        int       `db:"size"`
+	Size        int64     `db:"size"`
 	Type        string    `db:"type"`
 	CreatedAt   time.Time `db:"created_at,omitempty"`
 	UpdatedAt   time.Time `db:"updated_at"`

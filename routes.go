@@ -21,6 +21,7 @@ func routes(app *celeritas.Celeritas, middleware *middleware.Middleware, handler
 		rt.Delete("/files/{id}", handlers.FileHandler.DeleteFile)
 
 		rt.Get("/download/*", handlers.FileHandler.GetFile)
+		rt.Get("/file-overview/{id}", handlers.FileHandler.FileOverview)
 
 	})
 

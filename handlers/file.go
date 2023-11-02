@@ -184,3 +184,37 @@ func (h *fileHandlerImpl) GetFile(w http.ResponseWriter, r *http.Request) {
 
 	http.ServeFile(w, r, filePath)
 }
+
+func (h *fileHandlerImpl) FileOverview(w http.ResponseWriter, r *http.Request) {
+	fileId := chi.URLParam(r, "id")
+
+	id, err := strconv.Atoi(fileId)
+	if err != nil {
+		_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
+		return
+	}
+
+	data, err := h.service.GetFile(id)
+	if err != nil {
+		_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
+		return
+	}
+
+	filePath := "./files/" + data.Name
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		http.Error(w, "File not exists!", http.StatusNotFound)
+		return
+	}
+	defer file.Close()
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+data.Name)
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	_, err = io.Copy(w, file)
+	if err != nil {
+		http.Error(w, "Error during reading file!", http.StatusInternalServerError)
+		return
+	}
+}

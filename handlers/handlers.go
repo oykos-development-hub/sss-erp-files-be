@@ -15,4 +15,5 @@ type FileHandler interface {
 	GetFileById(w http.ResponseWriter, r *http.Request)
 	GetFileList(w http.ResponseWriter, r *http.Request)
 	GetFile(w http.ResponseWriter, r *http.Request)
+	FileOverview(w http.ResponseWriter, r *http.Request)
 }

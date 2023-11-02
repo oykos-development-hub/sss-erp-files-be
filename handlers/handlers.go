@@ -9,7 +9,7 @@ type Handlers struct {
 }
 
 type FileHandler interface {
-	ShowFile(w http.ResponseWriter, r *http.Request)
+	DownloadFile(w http.ResponseWriter, r *http.Request)
 	CreateFile(w http.ResponseWriter, r *http.Request)
 	UpdateFile(w http.ResponseWriter, r *http.Request)
 	DeleteFile(w http.ResponseWriter, r *http.Request)

@@ -14,7 +14,7 @@ func routes(app *celeritas.Celeritas, middleware *middleware.Middleware, handler
 	//api
 	app.Routes.Route("/api", func(rt chi.Router) {
 
-		rt.Get("/file/*", handlers.FileHandler.ShowFile)
+		rt.Get("/download/{file}", handlers.FileHandler.DownloadFile)
 
 		rt.Post("/files", handlers.FileHandler.CreateFile)
 		rt.Get("/files/{id}", handlers.FileHandler.GetFileById)

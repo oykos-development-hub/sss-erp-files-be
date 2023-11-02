@@ -32,9 +32,26 @@ func NewFileHandler(app *celeritas.Celeritas, fileService services.FileService) 
 	}
 }
 
-func (h *fileHandlerImpl) ShowFile(w http.ResponseWriter, r *http.Request) {
-	fs := http.FileServer(http.Dir("./files"))
-	http.StripPrefix("/file", fs).ServeHTTP(w, r)
+func (h *fileHandlerImpl) DownloadFile(w http.ResponseWriter, r *http.Request) {
+	fileName := chi.URLParam(r, "file")
+
+	filePath := "./files/" + fileName
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		http.Error(w, "File not exists!", http.StatusNotFound)
+		return
+	}
+	defer file.Close()
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	_, err = io.Copy(w, file)
+	if err != nil {
+		http.Error(w, "Error during reading file!", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {

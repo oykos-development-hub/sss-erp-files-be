@@ -32,6 +32,11 @@ func NewFileHandler(app *celeritas.Celeritas, fileService services.FileService) 
 	}
 }
 
+func (h *fileHandlerImpl) ShowFile(w http.ResponseWriter, r *http.Request) {
+	fs := http.FileServer(http.Dir("./files"))
+	http.StripPrefix("/file", fs).ServeHTTP(w, r)
+}
+
 func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {
 	maxFileSize := int64(100 * 1024 * 1024) // file maximum 100 MB
 

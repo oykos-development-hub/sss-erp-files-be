@@ -33,9 +33,21 @@ func NewFileHandler(app *celeritas.Celeritas, fileService services.FileService) 
 }
 
 func (h *fileHandlerImpl) DownloadFile(w http.ResponseWriter, r *http.Request) {
-	fileName := chi.URLParam(r, "file")
+	fileId := chi.URLParam(r, "id")
 
-	filePath := "./files/" + fileName
+	id, err := strconv.Atoi(fileId)
+	if err != nil {
+		_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
+		return
+	}
+
+	data, err := h.service.GetFile(id)
+	if err != nil {
+		_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
+		return
+	}
+
+	filePath := "./files/" + data.Name
 
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -44,7 +56,7 @@ func (h *fileHandlerImpl) DownloadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
+	w.Header().Set("Content-Disposition", "attachment; filename="+data.Name)
 	w.Header().Set("Content-Type", "application/octet-stream")
 
 	_, err = io.Copy(w, file)

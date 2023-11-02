@@ -32,40 +32,6 @@ func NewFileHandler(app *celeritas.Celeritas, fileService services.FileService) 
 	}
 }
 
-func (h *fileHandlerImpl) DownloadFile(w http.ResponseWriter, r *http.Request) {
-	fileId := chi.URLParam(r, "id")
-
-	id, err := strconv.Atoi(fileId)
-	if err != nil {
-		_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
-		return
-	}
-
-	data, err := h.service.GetFile(id)
-	if err != nil {
-		_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
-		return
-	}
-
-	filePath := "./files/" + data.Name
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		http.Error(w, "File not exists!", http.StatusNotFound)
-		return
-	}
-	defer file.Close()
-
-	w.Header().Set("Content-Disposition", "attachment; filename="+data.Name)
-	w.Header().Set("Content-Type", "application/octet-stream")
-
-	_, err = io.Copy(w, file)
-	if err != nil {
-		http.Error(w, "Error during reading file!", http.StatusInternalServerError)
-		return
-	}
-}
-
 func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {
 	maxFileSize := int64(100 * 1024 * 1024) // file maximum 100 MB
 
@@ -205,4 +171,16 @@ func generateUniqueFileName(filePath string) string {
 	uniqueFileName := fmt.Sprintf("%s_%d%s", fileNameWithoutExt, randomNum, ext)
 
 	return uniqueFileName
+}
+
+func (h *fileHandlerImpl) GetFile(w http.ResponseWriter, r *http.Request) {
+	filePath := "./files" + r.URL.Path[len("/api/download"):]
+
+	// Proverite da li fajl postoji
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		http.NotFound(w, r)
+		return
+	}
+
+	http.ServeFile(w, r, filePath)
 }

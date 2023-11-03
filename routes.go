@@ -16,8 +16,6 @@ func routes(app *celeritas.Celeritas, middleware *middleware.Middleware, handler
 
 		rt.Post("/files", handlers.FileHandler.CreateFile)
 		rt.Get("/files/{id}", handlers.FileHandler.GetFileById)
-		rt.Get("/files", handlers.FileHandler.GetFileList)
-		rt.Put("/files/{id}", handlers.FileHandler.UpdateFile)
 		rt.Delete("/files/{id}", handlers.FileHandler.DeleteFile)
 
 		rt.Get("/download/*", handlers.FileHandler.GetFile)

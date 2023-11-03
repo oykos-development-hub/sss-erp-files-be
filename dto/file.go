@@ -25,6 +25,11 @@ type FileResponseDTO struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+type FileResponse struct {
+	Data   *FileResponseDTO `json:"data"`
+	Status string           `json:"status"`
+}
+
 func (dto FileDTO) ToFile() *data.File {
 	return &data.File{
 		ParentID:    dto.ParentID,

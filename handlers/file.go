@@ -260,7 +260,7 @@ func (h *fileHandlerImpl) GetFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filePath := "./files" + res.Name
+	filePath := "./files/" + res.Name
 
 	// Proverite da li fajl postoji
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {

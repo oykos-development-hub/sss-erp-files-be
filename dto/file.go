@@ -25,9 +25,22 @@ type FileResponseDTO struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
+type Article struct {
+	Title         string  `json:"title"`
+	Description   string  `json:"description"`
+	NetPrice      float32 `json:"net_price"`
+	VatPercentage string  `json:"vat_percentage"`
+	Manufacturer  string  `json:"manufacturer"`
+}
+
 type FileResponse struct {
 	Data   *FileResponseDTO `json:"data"`
 	Status string           `json:"status"`
+}
+
+type ArticleResponse struct {
+	Data   []Article `json:"data"`
+	Status string    `json:"status"`
 }
 
 func (dto FileDTO) ToFile() *data.File {

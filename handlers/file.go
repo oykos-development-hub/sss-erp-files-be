@@ -160,7 +160,11 @@ func (h *fileHandlerImpl) DeleteFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = h.App.WriteSuccessResponse(w, http.StatusOK, "File deleted successfuly")
+	response := dto.FileResponse{
+		Status: "success",
+	}
+
+	_ = h.App.WriteDataResponse(w, http.StatusOK, "File deleted successfuly", response)
 }
 
 func (h *fileHandlerImpl) GetFileById(w http.ResponseWriter, r *http.Request) {

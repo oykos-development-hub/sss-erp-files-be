@@ -38,6 +38,11 @@ type FileResponse struct {
 	Status string           `json:"status"`
 }
 
+type MultipleFileResponse struct {
+	Data   []*FileResponseDTO `json:"data"`
+	Status string             `json:"status"`
+}
+
 type ArticleResponse struct {
 	Data   []Article `json:"data"`
 	Status string    `json:"status"`

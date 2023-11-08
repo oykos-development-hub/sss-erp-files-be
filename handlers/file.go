@@ -33,12 +33,10 @@ func NewFileHandler(app *celeritas.Celeritas, fileService services.FileService) 
 }
 
 func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {
-	maxFileSize := int64(100 * 1024 * 1024) // file maximum 100 MB
+	maxFileSize := int64(100 * 1024 * 1024) // Maksimalna veličina fajla je 100 MB
 
 	err := r.ParseMultipartForm(maxFileSize)
 	if err != nil {
-		//http.Error(w, "File is not valid!", http.StatusBadRequest)
-		//return
 		response := dto.FileResponse{
 			Status: "failed",
 		}
@@ -46,80 +44,76 @@ func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, header, err := r.FormFile("file")
-	if err != nil {
-		//http.Error(w, "Error during fetching file!", http.StatusBadRequest)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
+	files := r.MultipartForm.File["file"]
+
+	var filesResponse []*dto.FileResponseDTO
+
+	for _, fileHeader := range files {
+		file, err := fileHeader.Open()
+		if err != nil {
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during fetching file", response)
+			return
 		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during fetching file", response)
-		return
-	}
-	defer file.Close()
+		defer file.Close()
 
-	uploadDir := "./files"
+		uploadDir := "./files"
 
-	fileName := generateUniqueFileName(header.Filename)
+		fileName := generateUniqueFileName(fileHeader.Filename)
 
-	uploadedFile, err := os.Create(filepath.Join(uploadDir, fileName))
-	if err != nil {
-		//http.Error(w, "Error during creating file!", http.StatusBadRequest)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
+		uploadedFile, err := os.Create(filepath.Join(uploadDir, fileName))
+		if err != nil {
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during creating file", response)
+			return
 		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during creating file", response)
-		return
-	}
-	defer uploadedFile.Close()
+		defer uploadedFile.Close()
 
-	_, err = io.Copy(uploadedFile, file)
-	if err != nil {
-		//http.Error(w, "Error during uploading file!", http.StatusBadRequest)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
+		_, err = io.Copy(uploadedFile, file)
+		if err != nil {
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during uploading file", response)
+			return
 		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during uploading file", response)
-		return
-	}
 
-	var input dto.FileDTO
+		var input dto.FileDTO
 
-	fileInfo, err := os.Stat(uploadedFile.Name())
-	if err != nil {
-		//http.Error(w, "Error during fetching file stats!", http.StatusBadRequest)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
+		fileInfo, err := os.Stat(uploadedFile.Name())
+		if err != nil {
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during fetching file stats", response)
+			return
 		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during fetching file stats", response)
-		return
-	}
 
-	ext := filepath.Ext(header.Filename)
+		ext := filepath.Ext(fileHeader.Filename)
 
-	input.Name = fileName
-	input.Size = fileInfo.Size()
-	input.Type = &ext
-	res, err := h.service.CreateFile(input)
-	if err != nil {
-		//_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
+		input.Name = fileName
+		input.Size = fileInfo.Size()
+		input.Type = &ext
+		res, err := h.service.CreateFile(input)
+		if err != nil {
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during saving file at database", response)
+			return
 		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during saving file at database", response)
-		return
+		filesResponse = append(filesResponse, res)
 	}
 
-	response := dto.FileResponse{
-		Data:   res,
+	response := dto.MultipleFileResponse{
 		Status: "success",
+		Data:   filesResponse,
 	}
-
-	_ = h.App.WriteDataResponse(w, http.StatusOK, "File created successfuly", response)
+	_ = h.App.WriteDataResponse(w, http.StatusOK, "Files created successfully", response)
 }
 
 func (h *fileHandlerImpl) DeleteFile(w http.ResponseWriter, r *http.Request) {

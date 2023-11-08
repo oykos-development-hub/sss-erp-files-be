@@ -247,7 +247,20 @@ func (h *fileHandlerImpl) MultipleDeleteFile(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *fileHandlerImpl) GetFile(w http.ResponseWriter, r *http.Request) {
-	filePath := "./files" + r.URL.Path[len("/api/download"):]
+	id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+
+	res, err := h.service.GetFile(id)
+	if err != nil {
+		//_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
+		//return
+		response := dto.FileResponse{
+			Status: "failed",
+		}
+		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File not found", response)
+		return
+	}
+
+	filePath := "./files" + res.Name
 
 	// Proverite da li fajl postoji
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {

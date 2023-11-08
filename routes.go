@@ -31,7 +31,7 @@ func routes(app *celeritas.Celeritas, middleware *middleware.Middleware, handler
 		rt.Get("/files/{id}", handlers.FileHandler.GetFileById)
 		rt.Delete("/files/{id}", handlers.FileHandler.DeleteFile)
 		rt.Post("/files/batch-delete", handlers.FileHandler.MultipleDeleteFile)
-		rt.Get("/download/*", handlers.FileHandler.GetFile)
+		rt.Get("/download/{id}", handlers.FileHandler.GetFile)
 		rt.Get("/file-overview/{id}", handlers.FileHandler.FileOverview)
 
 		rt.Get("/read-articles", handlers.FileHandler.ReadArticles)

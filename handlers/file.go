@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"gitlab.sudovi.me/erp/file-ms-api/dto"
+	"gitlab.sudovi.me/erp/file-ms-api/errors"
 	"gitlab.sudovi.me/erp/file-ms-api/services"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
@@ -196,6 +197,53 @@ func generateUniqueFileName(filePath string) string {
 	uniqueFileName := fmt.Sprintf("%s_%d%s", fileNameWithoutExt, randomNum, ext)
 
 	return uniqueFileName
+}
+
+func (h *fileHandlerImpl) MultipleDeleteFile(w http.ResponseWriter, r *http.Request) {
+	var input dto.MultipleDeleteFiles
+	err := h.App.ReadJSON(w, r, &input)
+	if err != nil {
+		_ = h.App.WriteErrorResponse(w, http.StatusBadRequest, err)
+		return
+	}
+
+	validator := h.App.Validator().ValidateStruct(&input)
+	if !validator.Valid() {
+		_ = h.App.WriteErrorResponseWithData(w, errors.MapErrorToStatusCode(errors.ErrBadRequest), errors.ErrBadRequest, validator.Errors)
+		return
+	}
+
+	for _, id := range input.Files {
+		res, err := h.service.GetFile(id)
+		if err != nil {
+			//_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
+			//return
+
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File not found", response)
+			return
+		}
+
+		err = os.Remove("./files/" + res.Name)
+
+		if err != nil {
+			//_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
+			//return
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during deleting file", response)
+			return
+		}
+	}
+
+	response := dto.FileResponse{
+		Status: "success",
+	}
+
+	_ = h.App.WriteDataResponse(w, http.StatusOK, "Files deleted successfuly", response)
 }
 
 func (h *fileHandlerImpl) GetFile(w http.ResponseWriter, r *http.Request) {

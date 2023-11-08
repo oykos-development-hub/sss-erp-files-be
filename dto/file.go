@@ -43,6 +43,10 @@ type MultipleFileResponse struct {
 	Status string             `json:"status"`
 }
 
+type MultipleDeleteFiles struct {
+	Files []int `json:"files"`
+}
+
 type ArticleResponse struct {
 	Data   []Article `json:"data"`
 	Status string    `json:"status"`

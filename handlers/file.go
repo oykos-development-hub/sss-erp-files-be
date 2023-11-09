@@ -348,6 +348,18 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	procurementID := r.FormValue("public_procurement_id")
+
+	publicProcurementID, err := strconv.Atoi(procurementID)
+
+	if err != nil {
+		response := dto.FileResponse{
+			Status: "failed",
+		}
+		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "You must provide valid public_procurement_id", response)
+		return
+	}
+
 	// Sačuvajte fajl na disku
 	tempFile, err := os.CreateTemp("", "uploaded-file-")
 	if err != nil {
@@ -441,6 +453,7 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 					article.VatPercentage = value
 				}
 			}
+			article.PublicProcurementID = publicProcurementID
 			articles = append(articles, article)
 		}
 

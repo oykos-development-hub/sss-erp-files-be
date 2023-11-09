@@ -26,11 +26,12 @@ type FileResponseDTO struct {
 }
 
 type Article struct {
-	Title         string  `json:"title"`
-	Description   string  `json:"description"`
-	NetPrice      float32 `json:"net_price"`
-	VatPercentage string  `json:"vat_percentage"`
-	Manufacturer  string  `json:"manufacturer"`
+	Title               string  `json:"title"`
+	Description         string  `json:"description"`
+	NetPrice            float32 `json:"net_price"`
+	VatPercentage       string  `json:"vat_percentage"`
+	Manufacturer        string  `json:"manufacturer"`
+	PublicProcurementID int     `json:"public_procurement_id"`
 }
 
 type FileResponse struct {

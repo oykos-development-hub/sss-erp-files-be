@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"io"
+	"math"
 	"math/rand"
 	"net/http"
 	"os"
@@ -439,7 +440,6 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 				case 1:
 					article.Description = value
 				case 2:
-
 					if value == "" {
 						break
 					}
@@ -455,7 +455,26 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 					}
 					article.NetPrice = float32(floatValue)
 				case 3:
-					article.VatPercentage = value
+					if value == "" {
+						break
+					}
+
+					floatValue, err := strconv.ParseFloat(value, 32)
+
+					if err != nil {
+						response := dto.FileResponse{
+							Status: "failed",
+						}
+						_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during converting neto price", response)
+						return
+					}
+
+					vatPercentage := 100 * floatValue / float64(article.NetPrice)
+					round := math.Round(vatPercentage)
+
+					valueVat := strconv.Itoa(int(round))
+
+					article.VatPercentage = valueVat
 				}
 			}
 

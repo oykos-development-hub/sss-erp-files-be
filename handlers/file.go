@@ -366,7 +366,7 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 		response := dto.FileResponse{
 			Status: "failed",
 		}
-		_ = h.App.WriteDataResponse(w, http.StatusInternalServerError, "Greška prilikom čuvanja fajla na disku", response)
+		_ = h.App.WriteDataResponse(w, http.StatusInternalServerError, "Error during opening file", response)
 		return
 	}
 	defer tempFile.Close()
@@ -376,7 +376,7 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 		response := dto.FileResponse{
 			Status: "failed",
 		}
-		_ = h.App.WriteDataResponse(w, http.StatusInternalServerError, "Greška prilikom kopiranja fajla na disk", response)
+		_ = h.App.WriteDataResponse(w, http.StatusInternalServerError, "Error during reading file", response)
 		return
 	}
 
@@ -439,6 +439,11 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 				case 1:
 					article.Description = value
 				case 2:
+
+					if value == "" {
+						break
+					}
+
 					floatValue, err := strconv.ParseFloat(value, 32)
 
 					if err != nil {
@@ -453,7 +458,13 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 					article.VatPercentage = value
 				}
 			}
+
 			article.PublicProcurementID = publicProcurementID
+
+			if article.Title == "" || article.NetPrice == 0 || article.VatPercentage == "" {
+				break
+			}
+
 			articles = append(articles, article)
 		}
 

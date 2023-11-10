@@ -34,7 +34,7 @@ func routes(app *celeritas.Celeritas, middleware *middleware.Middleware, handler
 		rt.Get("/download/{id}", handlers.FileHandler.GetFile)
 		rt.Get("/file-overview/{id}", handlers.FileHandler.FileOverview)
 
-		rt.Get("/read-articles", handlers.FileHandler.ReadArticles)
+		rt.Post("/read-articles", handlers.FileHandler.ReadArticles)
 	})
 
 	return r

@@ -15,5 +15,7 @@ type FileHandler interface {
 	GetFileById(w http.ResponseWriter, r *http.Request)
 	GetFile(w http.ResponseWriter, r *http.Request)
 	FileOverview(w http.ResponseWriter, r *http.Request)
+	TemplateUpload(w http.ResponseWriter, r *http.Request)
+	TemplateDownload(w http.ResponseWriter, r *http.Request)
 	ReadArticles(w http.ResponseWriter, r *http.Request)
 }

@@ -323,6 +323,87 @@ func (h *fileHandlerImpl) FileOverview(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *fileHandlerImpl) TemplateUpload(w http.ResponseWriter, r *http.Request) {
+	maxFileSize := int64(100 * 1024 * 1024) // Maksimalna veličina fajla je 100 MB
+
+	err := r.ParseMultipartForm(maxFileSize)
+	if err != nil {
+		response := dto.FileResponse{
+			Status: "failed",
+		}
+		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File is not valid", response)
+		return
+	}
+
+	files := r.MultipartForm.File["file"]
+
+	for _, fileHeader := range files {
+		file, err := fileHeader.Open()
+		if err != nil {
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during fetching file", response)
+			return
+		}
+		defer file.Close()
+
+		uploadDir := "./templates"
+
+		uploadedFile, err := os.Create(uploadDir + "/" + fileHeader.Filename)
+		if err != nil {
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during creating file", response)
+			return
+		}
+		defer uploadedFile.Close()
+
+		_, err = io.Copy(uploadedFile, file)
+		if err != nil {
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during uploading file", response)
+			return
+		}
+	}
+
+	response := dto.MultipleFileResponse{
+		Status: "success",
+	}
+	_ = h.App.WriteDataResponse(w, http.StatusOK, "Files created successfully", response)
+}
+
+func (h *fileHandlerImpl) TemplateDownload(w http.ResponseWriter, r *http.Request) {
+	fileName := chi.URLParam(r, "*")
+
+	filePath := "./templates/" + fileName
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		response := dto.FileResponse{
+			Status: "failed",
+		}
+		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File not exists", response)
+		return
+	}
+	defer file.Close()
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	_, err = io.Copy(w, file)
+	if err != nil {
+		response := dto.FileResponse{
+			Status: "failed",
+		}
+		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during reading file", response)
+		return
+	}
+}
+
 func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 	maxFileSize := int64(100 * 1024 * 1024) // file maximum 100 MB
 

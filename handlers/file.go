@@ -567,7 +567,7 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 
 			article.PublicProcurementID = publicProcurementID
 
-			if article.Title == "" || article.NetPrice == 0 || article.VatPercentage == "" || article.VisibilityType == 0 {
+			if article.Title == "" || article.NetPrice == 0 || article.VatPercentage == "" {
 				break
 			}
 

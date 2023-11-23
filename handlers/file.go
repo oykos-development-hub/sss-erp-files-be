@@ -556,12 +556,18 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 					valueVat := strconv.Itoa(int(round))
 
 					article.VatPercentage = valueVat
+				case 5:
+					if value == "Materijalno knjigovodstvo" {
+						article.VisibilityType = 3
+					} else if value == "Osnovna sredstva" {
+						article.VisibilityType = 2
+					}
 				}
 			}
 
 			article.PublicProcurementID = publicProcurementID
 
-			if article.Title == "" || article.NetPrice == 0 || article.VatPercentage == "" {
+			if article.Title == "" || article.NetPrice == 0 || article.VatPercentage == "" || article.VisibilityType == 0 {
 				break
 			}
 
@@ -575,5 +581,5 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 		Status: "success",
 	}
 
-	_ = h.App.WriteDataResponse(w, http.StatusOK, "File created successfuly", response)
+	_ = h.App.WriteDataResponse(w, http.StatusOK, "File readed successfuly", response)
 }

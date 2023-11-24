@@ -558,9 +558,9 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 					article.VatPercentage = valueVat
 				case 5:
 					if value == "Materijalno knjigovodstvo" {
-						article.VisibilityType = 3
-					} else if value == "Osnovna sredstva" {
 						article.VisibilityType = 2
+					} else if value == "Osnovna sredstva" {
+						article.VisibilityType = 3
 					}
 				}
 			}

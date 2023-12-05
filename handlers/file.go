@@ -583,3 +583,199 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 
 	_ = h.App.WriteDataResponse(w, http.StatusOK, "File readed successfuly", response)
 }
+
+func (h *fileHandlerImpl) ReadSimpleArticles(w http.ResponseWriter, r *http.Request) {
+	maxFileSize := int64(100 * 1024 * 1024) // file maximum 100 MB
+
+	err := r.ParseMultipartForm(maxFileSize)
+	if err != nil {
+		//http.Error(w, "File is not valid!", http.StatusBadRequest)
+		//return
+		response := dto.FileResponse{
+			Status: "failed",
+		}
+		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File is not valid", response)
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		//http.Error(w, "Error during fetching file!", http.StatusBadRequest)
+		//return
+		response := dto.FileResponse{
+			Status: "failed",
+		}
+		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during fetching file", response)
+		return
+	}
+	defer file.Close()
+
+	procurementID := r.FormValue("public_procurement_id")
+
+	publicProcurementID, err := strconv.Atoi(procurementID)
+
+	if err != nil {
+		response := dto.FileResponse{
+			Status: "failed",
+		}
+		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "You must provide valid public_procurement_id", response)
+		return
+	}
+
+	// Sačuvajte fajl na disku
+	tempFile, err := os.CreateTemp("", "uploaded-file-")
+	if err != nil {
+		response := dto.FileResponse{
+			Status: "failed",
+		}
+		_ = h.App.WriteDataResponse(w, http.StatusInternalServerError, "Error during opening file", response)
+		return
+	}
+	defer tempFile.Close()
+
+	_, err = io.Copy(tempFile, file)
+	if err != nil {
+		response := dto.FileResponse{
+			Status: "failed",
+		}
+		_ = h.App.WriteDataResponse(w, http.StatusInternalServerError, "Error during reading file", response)
+		return
+	}
+
+	// Sada možete otvoriti sačuvani fajl koristeći putanju do njega
+	xlsFile, err := excelize.OpenFile(tempFile.Name())
+
+	if err != nil {
+		//http.Error(w, "Error during fetching file!", http.StatusBadRequest)
+		//return
+		response := dto.FileResponse{
+			Status: "failed",
+		}
+		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during opening file", response)
+		return
+	}
+
+	// Prolazak kroz listu i čitanje podataka
+	var articles []dto.Article
+
+	// Pristupanje listama u Excel fajlu
+	sheetMap := xlsFile.GetSheetMap()
+
+	for _, sheetName := range sheetMap {
+		if sheetName != "Stavke" {
+			continue
+		}
+
+		rows, err := xlsFile.Rows(sheetName)
+		if err != nil {
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during reading file rows!", response)
+			return
+		}
+
+		rowindex := 0
+
+		for rows.Next() {
+			if rowindex == 0 {
+				rowindex++
+				continue
+			}
+
+			cols := rows.Columns()
+			if err != nil {
+				response := dto.FileResponse{
+					Status: "failed",
+				}
+				_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during reading column value", response)
+				return
+			}
+
+			var article dto.Article
+			for cellIndex, cellValue := range cols {
+				value := cellValue
+				switch cellIndex {
+				case 0:
+					article.Title = value
+				case 1:
+					article.Description = value
+				case 2:
+					if value == "" {
+						break
+					}
+
+					floatValue, err := strconv.ParseFloat(value, 32)
+
+					if err != nil {
+						response := dto.FileResponse{
+							Status: "failed",
+						}
+						_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during converting neto price", response)
+						return
+					}
+					article.NetPrice = float32(floatValue)
+				case 3:
+					if value == "" {
+						break
+					}
+
+					floatValue, err := strconv.ParseFloat(value, 32)
+
+					if err != nil {
+						response := dto.FileResponse{
+							Status: "failed",
+						}
+						_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during converting neto price", response)
+						return
+					}
+
+					vatPercentage := 100 * floatValue / float64(article.NetPrice)
+					round := math.Round(vatPercentage)
+
+					valueVat := strconv.Itoa(int(round))
+
+					article.VatPercentage = valueVat
+				case 4:
+					if value == "" {
+						break
+					}
+
+					amount, err := strconv.ParseFloat(value, 64)
+
+					if err != nil {
+						response := dto.FileResponse{
+							Status: "failed",
+						}
+						_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during converting amount", response)
+						return
+					}
+
+					article.Amount = int(amount)
+				case 6:
+					if value == "Materijalno knjigovodstvo" {
+						article.VisibilityType = 2
+					} else if value == "Osnovna sredstva" {
+						article.VisibilityType = 3
+					}
+				}
+			}
+
+			article.PublicProcurementID = publicProcurementID
+
+			if article.Title == "" || article.NetPrice == 0 || article.VatPercentage == "" {
+				break
+			}
+
+			articles = append(articles, article)
+		}
+
+	}
+
+	response := dto.ArticleResponse{
+		Data:   articles,
+		Status: "success",
+	}
+
+	_ = h.App.WriteDataResponse(w, http.StatusOK, "File readed successfuly", response)
+}

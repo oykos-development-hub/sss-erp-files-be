@@ -32,6 +32,7 @@ type Article struct {
 	VatPercentage       string  `json:"vat_percentage"`
 	Manufacturer        string  `json:"manufacturer"`
 	PublicProcurementID int     `json:"public_procurement_id"`
+	Amount              int     `json:"amount"`
 	VisibilityType      int     `json:"visibility_type"`
 }
 

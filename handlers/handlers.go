@@ -18,4 +18,5 @@ type FileHandler interface {
 	TemplateUpload(w http.ResponseWriter, r *http.Request)
 	TemplateDownload(w http.ResponseWriter, r *http.Request)
 	ReadArticles(w http.ResponseWriter, r *http.Request)
+	ReadSimpleArticles(w http.ResponseWriter, r *http.Request)
 }

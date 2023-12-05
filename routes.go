@@ -38,6 +38,7 @@ func routes(app *celeritas.Celeritas, middleware *middleware.Middleware, handler
 		rt.Get("/template-download/*", handlers.FileHandler.TemplateDownload)
 
 		rt.Post("/read-articles", handlers.FileHandler.ReadArticles)
+		rt.Post("/read-articles-simple-procurement", handlers.FileHandler.ReadSimpleArticles)
 	})
 
 	return r

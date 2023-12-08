@@ -238,6 +238,16 @@ func (h *fileHandlerImpl) MultipleDeleteFile(w http.ResponseWriter, r *http.Requ
 			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during deleting file", response)
 			return
 		}
+
+		err = h.service.DeleteFile(id)
+		if err != nil {
+			response := dto.FileResponse{
+				Status: "failed",
+			}
+			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during deleting file", response)
+			return
+		}
+
 	}
 
 	response := dto.FileResponse{

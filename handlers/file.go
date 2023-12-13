@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -34,15 +36,35 @@ func NewFileHandler(app *celeritas.Celeritas, fileService services.FileService) 
 	}
 }
 
+func handleError(w http.ResponseWriter, err error, statusCode int) {
+	log.Printf("Error: %s - %v", err.Error(), err)
+	w.WriteHeader(statusCode)
+	_ = MarshalAndWriteJSON(w, dto.ErrorResponse{Message: err.Error()})
+}
+
+func MarshalAndWriteJSON(w http.ResponseWriter, obj interface{}) error {
+	jsonResponse, err := json.Marshal(obj)
+	if err != nil {
+		http.Error(w, "Error during JSON marshaling", http.StatusInternalServerError)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(jsonResponse)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {
 	maxFileSize := int64(100 * 1024 * 1024) // Maksimalna veličina fajla je 100 MB
 
 	err := r.ParseMultipartForm(maxFileSize)
 	if err != nil {
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File is not valid", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -53,10 +75,7 @@ func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {
 	for _, fileHeader := range files {
 		file, err := fileHeader.Open()
 		if err != nil {
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during fetching file", response)
+			handleError(w, err, http.StatusBadRequest)
 			return
 		}
 		defer file.Close()
@@ -67,20 +86,14 @@ func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {
 
 		uploadedFile, err := os.Create(filepath.Join(uploadDir, fileName))
 		if err != nil {
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during creating file", response)
+			handleError(w, err, http.StatusBadRequest)
 			return
 		}
 		defer uploadedFile.Close()
 
 		_, err = io.Copy(uploadedFile, file)
 		if err != nil {
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during uploading file", response)
+			handleError(w, err, http.StatusBadRequest)
 			return
 		}
 
@@ -88,10 +101,7 @@ func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {
 
 		fileInfo, err := os.Stat(uploadedFile.Name())
 		if err != nil {
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during fetching file stats", response)
+			handleError(w, err, http.StatusBadRequest)
 			return
 		}
 
@@ -102,20 +112,18 @@ func (h *fileHandlerImpl) CreateFile(w http.ResponseWriter, r *http.Request) {
 		input.Type = &ext
 		res, err := h.service.CreateFile(input)
 		if err != nil {
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during saving file at database", response)
+			handleError(w, err, http.StatusInternalServerError)
 			return
 		}
 		filesResponse = append(filesResponse, res)
 	}
 
 	response := dto.MultipleFileResponse{
-		Status: "success",
 		Data:   filesResponse,
+		Status: "success",
 	}
-	_ = h.App.WriteDataResponse(w, http.StatusOK, "Files created successfully", response)
+
+	_ = MarshalAndWriteJSON(w, response)
 }
 
 func (h *fileHandlerImpl) DeleteFile(w http.ResponseWriter, r *http.Request) {

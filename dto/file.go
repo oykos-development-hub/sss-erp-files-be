@@ -6,6 +6,10 @@ import (
 	"gitlab.sudovi.me/erp/file-ms-api/data"
 )
 
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
+
 type FileDTO struct {
 	ParentID    *int    `json:"parent_id"`
 	Name        string  `json:"name"`
@@ -37,8 +41,9 @@ type Article struct {
 }
 
 type FileResponse struct {
-	Data   *FileResponseDTO `json:"data"`
-	Status string           `json:"status"`
+	Data    *FileResponseDTO `json:"data"`
+	Status  string           `json:"status"`
+	Message string           `json:"message"`
 }
 
 type MultipleFileResponse struct {

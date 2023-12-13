@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"gitlab.sudovi.me/erp/file-ms-api/dto"
-	"gitlab.sudovi.me/erp/file-ms-api/errors"
 	"gitlab.sudovi.me/erp/file-ms-api/services"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
@@ -131,36 +130,20 @@ func (h *fileHandlerImpl) DeleteFile(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.service.GetFile(id)
 	if err != nil {
-		//_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
-		//return
-
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File not found", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	err = os.Remove("./files/" + res.Name)
 
 	if err != nil {
-		//_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during deleting file", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	err = h.service.DeleteFile(id)
 	if err != nil {
-		//_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during deleting file from database", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -176,12 +159,7 @@ func (h *fileHandlerImpl) GetFileById(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.service.GetFile(id)
 	if err != nil {
-		//_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File not found", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -212,47 +190,33 @@ func (h *fileHandlerImpl) MultipleDeleteFile(w http.ResponseWriter, r *http.Requ
 	var input dto.MultipleDeleteFiles
 	err := h.App.ReadJSON(w, r, &input)
 	if err != nil {
-		_ = h.App.WriteErrorResponse(w, http.StatusBadRequest, err)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	validator := h.App.Validator().ValidateStruct(&input)
 	if !validator.Valid() {
-		_ = h.App.WriteErrorResponseWithData(w, errors.MapErrorToStatusCode(errors.ErrBadRequest), errors.ErrBadRequest, validator.Errors)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	for _, id := range input.Files {
 		res, err := h.service.GetFile(id)
 		if err != nil {
-			//_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
-			//return
-
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File not found", response)
+			handleError(w, err, http.StatusBadRequest)
 			return
 		}
 
 		err = os.Remove("./files/" + res.Name)
 
 		if err != nil {
-			//_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
-			//return
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during deleting file", response)
+			handleError(w, err, http.StatusBadRequest)
 			return
 		}
 
 		err = h.service.DeleteFile(id)
 		if err != nil {
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during deleting file", response)
+			handleError(w, err, http.StatusBadRequest)
 			return
 		}
 
@@ -270,12 +234,7 @@ func (h *fileHandlerImpl) GetFile(w http.ResponseWriter, r *http.Request) {
 
 	res, err := h.service.GetFile(id)
 	if err != nil {
-		//_ = h.App.WriteErrorResponse(w, errors.MapErrorToStatusCode(err), err)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File not found", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -283,12 +242,7 @@ func (h *fileHandlerImpl) GetFile(w http.ResponseWriter, r *http.Request) {
 
 	// Proverite da li fajl postoji
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		//http.NotFound(w, r)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File not found", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -300,19 +254,13 @@ func (h *fileHandlerImpl) FileOverview(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(fileId)
 	if err != nil {
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "ID is not valid number", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	data, err := h.service.GetFile(id)
 	if err != nil {
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File not found", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -320,10 +268,7 @@ func (h *fileHandlerImpl) FileOverview(w http.ResponseWriter, r *http.Request) {
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File not exists", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
@@ -333,10 +278,7 @@ func (h *fileHandlerImpl) FileOverview(w http.ResponseWriter, r *http.Request) {
 
 	_, err = io.Copy(w, file)
 	if err != nil {
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during reading file", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 }
@@ -346,10 +288,7 @@ func (h *fileHandlerImpl) TemplateUpload(w http.ResponseWriter, r *http.Request)
 
 	err := r.ParseMultipartForm(maxFileSize)
 	if err != nil {
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File is not valid", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -358,10 +297,7 @@ func (h *fileHandlerImpl) TemplateUpload(w http.ResponseWriter, r *http.Request)
 	for _, fileHeader := range files {
 		file, err := fileHeader.Open()
 		if err != nil {
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during fetching file", response)
+			handleError(w, err, http.StatusBadRequest)
 			return
 		}
 		defer file.Close()
@@ -370,20 +306,14 @@ func (h *fileHandlerImpl) TemplateUpload(w http.ResponseWriter, r *http.Request)
 
 		uploadedFile, err := os.Create(uploadDir + "/" + fileHeader.Filename)
 		if err != nil {
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during creating file", response)
+			handleError(w, err, http.StatusBadRequest)
 			return
 		}
 		defer uploadedFile.Close()
 
 		_, err = io.Copy(uploadedFile, file)
 		if err != nil {
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during uploading file", response)
+			handleError(w, err, http.StatusBadRequest)
 			return
 		}
 	}
@@ -401,10 +331,7 @@ func (h *fileHandlerImpl) TemplateDownload(w http.ResponseWriter, r *http.Reques
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File not exists", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
@@ -414,10 +341,7 @@ func (h *fileHandlerImpl) TemplateDownload(w http.ResponseWriter, r *http.Reques
 
 	_, err = io.Copy(w, file)
 	if err != nil {
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during reading file", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 }
@@ -427,23 +351,13 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseMultipartForm(maxFileSize)
 	if err != nil {
-		//http.Error(w, "File is not valid!", http.StatusBadRequest)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "File is not valid", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	file, _, err := r.FormFile("file")
 	if err != nil {
-		//http.Error(w, "Error during fetching file!", http.StatusBadRequest)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during fetching file", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
@@ -453,30 +367,21 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 	publicProcurementID, err := strconv.Atoi(procurementID)
 
 	if err != nil {
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "You must provide valid public_procurement_id", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
 	// Sačuvajte fajl na disku
 	tempFile, err := os.CreateTemp("", "uploaded-file-")
 	if err != nil {
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusInternalServerError, "Error during opening file", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 	defer tempFile.Close()
 
 	_, err = io.Copy(tempFile, file)
 	if err != nil {
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusInternalServerError, "Error during reading file", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -484,12 +389,7 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 	xlsFile, err := excelize.OpenFile(tempFile.Name())
 
 	if err != nil {
-		//http.Error(w, "Error during fetching file!", http.StatusBadRequest)
-		//return
-		response := dto.FileResponse{
-			Status: "failed",
-		}
-		_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during opening file", response)
+		handleError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -506,10 +406,7 @@ func (h *fileHandlerImpl) ReadArticles(w http.ResponseWriter, r *http.Request) {
 
 		rows, err := xlsFile.Rows(sheetName)
 		if err != nil {
-			response := dto.FileResponse{
-				Status: "failed",
-			}
-			_ = h.App.WriteDataResponse(w, http.StatusBadRequest, "Error during reading file rows!", response)
+			handleError(w, err, http.StatusBadRequest)
 			return
 		}
 

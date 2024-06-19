@@ -2,6 +2,8 @@ package services
 
 import (
 	"github.com/oykos-development-hub/celeritas"
+
+	newErrors "gitlab.sudovi.me/erp/file-ms-api/pkg/errors"
 )
 
 type BaseServiceImpl struct {
@@ -17,7 +19,7 @@ func (s BaseServiceImpl) Encrypt(text string) (string, error) {
 
 	encrypted, err := enc.Encrypt(text)
 	if err != nil {
-		return "", err
+		return "", newErrors.Wrap(err, "enc encrypt")
 	}
 	return encrypted, nil
 }
@@ -27,7 +29,7 @@ func (s BaseServiceImpl) Decrypt(crypto string) (string, error) {
 
 	decrypted, err := enc.Decrypt(crypto)
 	if err != nil {
-		return "", err
+		return "", newErrors.Wrap(err, "enc decrypt")
 	}
 	return decrypted, nil
 }

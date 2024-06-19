@@ -4,6 +4,7 @@ import (
 	"time"
 
 	up "github.com/upper/db/v4"
+	newErrors "gitlab.sudovi.me/erp/file-ms-api/pkg/errors"
 )
 
 // File struct
@@ -37,7 +38,7 @@ func (t *File) GetAll(condition *up.Cond) ([]*File, error) {
 
 	err := res.All(&all)
 	if err != nil {
-		return nil, err
+		return nil, newErrors.Wrap(err, "upper get all")
 	}
 
 	return all, err
@@ -51,7 +52,7 @@ func (t *File) Get(id int) (*File, error) {
 	res := collection.Find(up.Cond{"id": id})
 	err := res.One(&one)
 	if err != nil {
-		return nil, err
+		return nil, newErrors.Wrap(err, "upper get")
 	}
 	return &one, nil
 }
@@ -63,7 +64,7 @@ func (t *File) Update(m File) error {
 	res := collection.Find(m.ID)
 	err := res.Update(&m)
 	if err != nil {
-		return err
+		return newErrors.Wrap(err, "upper update")
 	}
 	return nil
 }
@@ -74,7 +75,7 @@ func (t *File) Delete(id int) error {
 	res := collection.Find(id)
 	err := res.Delete()
 	if err != nil {
-		return err
+		return newErrors.Wrap(err, "upper delete")
 	}
 	return nil
 }
@@ -86,7 +87,7 @@ func (t *File) Insert(m File) (int, error) {
 	collection := upper.Collection(t.Table())
 	res, err := collection.Insert(m)
 	if err != nil {
-		return 0, err
+		return 0, newErrors.Wrap(err, "upper insert")
 	}
 
 	id := getInsertId(res.ID())

